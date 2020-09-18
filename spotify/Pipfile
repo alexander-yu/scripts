@@ -11,6 +11,7 @@ pycodestyle = "*"
 spotipy = "*"
 cachetools = "*"
 click = "*"
+marshmallow = "*"
 
 [requires]
 python_version = "3.8"
