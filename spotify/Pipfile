@@ -12,6 +12,7 @@ spotipy = "*"
 cachetools = "*"
 click = "*"
 marshmallow = "*"
+boltons = "*"
 
 [requires]
 python_version = "3.8"
