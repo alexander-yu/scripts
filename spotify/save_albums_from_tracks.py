@@ -119,11 +119,16 @@ def save_albums(spotify: spotipy.Spotify, page: dict):
 def run():
     spotify = client.spotify_client()
     page = spotify.current_user_saved_tracks(limit=PAGE_LIMIT)
-    save_albums(spotify, page)
+    total = page['total']
 
-    while page:
-        page = spotify.next(page)
+    with click.progressbar(length=total) as bar:
         save_albums(spotify, page)
+        bar.update(len(page['items']))
+
+        while page:
+            page = spotify.next(page)
+            save_albums(spotify, page)
+            bar.update(len(page['items']))
 
 
 if __name__ == '__main__':
