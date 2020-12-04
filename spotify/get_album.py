@@ -1,9 +1,9 @@
 import pprint
 
 import click
-import spotipy
 
 import client
+
 
 @click.command()
 @click.argument('album_id')
@@ -22,4 +22,4 @@ def run(album_id, include_tracks, include_markets):
 
 
 if __name__ == '__main__':
-    run()
+    run()  # pylint: disable=no-value-for-parameter

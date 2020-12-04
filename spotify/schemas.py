@@ -15,7 +15,7 @@ class Page(marshmallow.Schema):
     items = fields.List(fields.Dict, required=True)
 
     @marshmallow.post_load
-    def make(self, data, **kwargs):
+    def make(self, data, **_):
         return objects.Page(**data)
 
 
@@ -26,7 +26,7 @@ class Artist(marshmallow.Schema):
     name = fields.String(required=True)
 
     @marshmallow.post_load
-    def make(self, data, **kwargs):
+    def make(self, data, **_):
         return objects.Artist(**data)
 
 
@@ -37,7 +37,7 @@ class SimpleTrack(marshmallow.Schema):
     id = fields.String(required=True)
 
     @marshmallow.post_load
-    def make(self, data, **kwargs):
+    def make(self, data, **_):
         return objects.SimpleTrack(**data)
 
 
@@ -50,7 +50,7 @@ class SimpleAlbum(marshmallow.Schema):
     artists = fields.List(fields.Nested(Artist), required=True)
 
     @marshmallow.post_load
-    def make(self, data, **kwargs):
+    def make(self, data, **_):
         return objects.SimpleAlbum(**data)
 
 
@@ -64,7 +64,7 @@ class Album(SimpleAlbum):
     tracks = fields.Nested(Page, required=True)
 
     @marshmallow.post_load
-    def make(self, data, **kwargs):
+    def make(self, data, **_):
         return objects.Album(**data)
 
 
@@ -75,7 +75,7 @@ class Track(SimpleTrack):
     album = fields.Nested(SimpleAlbum, required=True)
 
     @marshmallow.post_load
-    def make(self, data, **kwargs):
+    def make(self, data, **_):
         return objects.Track(**data)
 
 
@@ -87,5 +87,5 @@ class SavedTrack(marshmallow.Schema):
     track = fields.Nested(Track, required=True)
 
     @marshmallow.post_load
-    def make(self, data, **kwargs):
+    def make(self, data, **_):
         return objects.SavedTrack(**data)

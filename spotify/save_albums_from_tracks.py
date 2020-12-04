@@ -106,7 +106,7 @@ def save_albums(spotify: spotipy.Spotify, page: dict):
                 except ValueError:
                     click.echo('"{indices}" was not a valid list of indices.'.format(indices=indices))
                 finally:
-                    break
+                    break  # pylint: disable=lost-exception
 
             if indices:
                 album_ids = [unsaved_albums[index - 1].id for index in indices]
