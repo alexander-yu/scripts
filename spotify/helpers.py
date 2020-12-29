@@ -2,15 +2,15 @@ import collections
 
 from typing import Dict, Iterable, List
 
-import spotipy
-
 from boltons import iterutils
 
+import client
 import objects
 import schemas
 
 
-def get_tracks(spotify: spotipy.Spotify, albums: List[dict]) -> Dict[str, List[objects.SimpleTrack]]:
+def get_tracks(albums: List[dict]) -> Dict[str, List[objects.SimpleTrack]]:
+    spotify = client.spotify_client()
     tracks = collections.defaultdict(list)
 
     for album in albums:
@@ -24,13 +24,14 @@ def get_tracks(spotify: spotipy.Spotify, albums: List[dict]) -> Dict[str, List[o
     return tracks
 
 
-def get_albums(spotify: spotipy.Spotify, album_ids: Iterable[str]) -> Dict[str, objects.Album]:
+def get_albums(album_ids: Iterable[str]) -> Dict[str, objects.Album]:
+    spotify = client.spotify_client()
     albums = []
 
     for album_ids in iterutils.chunked(album_ids, 20):
         albums.extend(spotify.albums(album_ids)['albums'])
 
-    tracks = get_tracks(spotify, albums)
+    tracks = get_tracks(albums)
 
     albums_by_id = {}
     for album in albums:
@@ -41,8 +42,10 @@ def get_albums(spotify: spotipy.Spotify, album_ids: Iterable[str]) -> Dict[str, 
     return albums_by_id
 
 
-def current_user_saved_tracks_contains(spotify: spotipy.Spotify, track_ids: Iterable[str]) -> List[bool]:
+def current_user_saved_tracks_contains(track_ids: Iterable[str]) -> List[bool]:
+    spotify = client.spotify_client()
     saved = []
+
     for track_ids in iterutils.chunked(track_ids, 50):
         saved.extend(spotify.current_user_saved_tracks_contains(track_ids))
 

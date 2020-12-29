@@ -4,7 +4,6 @@ import itertools
 from typing import Dict, Iterable
 
 import click
-import spotipy
 
 import client
 import helpers
@@ -15,7 +14,8 @@ PAGE_LIMIT = 50
 AUTOSAVE_THRESHOLD = 0.6
 
 
-def get_unsaved_albums(spotify: spotipy.Spotify, albums_by_id: Dict[str, objects.Album]) -> Iterable[objects.Album]:
+def get_unsaved_albums(albums_by_id: Dict[str, objects.Album]) -> Iterable[objects.Album]:
+    spotify = client.spotify_client()
     saved = spotify.current_user_saved_albums_contains(list(albums_by_id.keys()))
 
     unsaved_albums = {}
@@ -23,14 +23,15 @@ def get_unsaved_albums(spotify: spotipy.Spotify, albums_by_id: Dict[str, objects
         if not album_is_saved:
             unsaved_albums[album_id] = albums_by_id[album_id]
 
-    autosaved_albums = autosave_albums(spotify, unsaved_albums)
+    autosaved_albums = autosave_albums(unsaved_albums)
     for album_id in autosaved_albums:
         unsaved_albums.pop(album_id)
 
     return unsaved_albums.values()
 
 
-def autosave_albums(spotify: spotipy.Spotify, unsaved_albums: Dict[str, objects.Album]):
+def autosave_albums(unsaved_albums: Dict[str, objects.Album]):
+    spotify = client.spotify_client()
     albums_by_track = {
         track.id: album
         for album in unsaved_albums.values()
@@ -43,7 +44,7 @@ def autosave_albums(spotify: spotipy.Spotify, unsaved_albums: Dict[str, objects.
             for album in unsaved_albums.values()
         ])
     ]
-    saved = helpers.current_user_saved_tracks_contains(spotify, track_ids)
+    saved = helpers.current_user_saved_tracks_contains(track_ids)
 
     album_save_counts = collections.defaultdict(int)
     for track_id, track_is_saved in zip(track_ids, saved):
@@ -68,7 +69,7 @@ def autosave_albums(spotify: spotipy.Spotify, unsaved_albums: Dict[str, objects.
     return albums_to_save
 
 
-def get_albums_by_id(spotify: spotipy.Spotify, page: dict) -> Dict[str, objects.Album]:
+def get_albums_by_id(page: dict) -> Dict[str, objects.Album]:
     page = schemas.Page().load(page)
     album_ids = []
 
@@ -76,12 +77,13 @@ def get_albums_by_id(spotify: spotipy.Spotify, page: dict) -> Dict[str, objects.
         track = schemas.SavedTrack().load(track)
         album_ids.append(track.track.album.id)
 
-    return helpers.get_albums(spotify, album_ids)
+    return helpers.get_albums(album_ids)
 
 
-def save_albums(spotify: spotipy.Spotify, page: dict):
-    albums_by_id = get_albums_by_id(spotify, page)
-    unsaved_albums = get_unsaved_albums(spotify, albums_by_id)
+def save_albums(page: dict):
+    spotify = client.spotify_client()
+    albums_by_id = get_albums_by_id(page)
+    unsaved_albums = get_unsaved_albums(albums_by_id)
 
     lines = []
     for i, album in enumerate(unsaved_albums):
@@ -122,12 +124,12 @@ def run():
     total = page['total']
 
     with click.progressbar(length=total) as bar:
-        save_albums(spotify, page)
+        save_albums(page)
         bar.update(len(page['items']))
 
         while page:
             page = spotify.next(page)
-            save_albums(spotify, page)
+            save_albums(page)
             bar.update(len(page['items']))
 
 
