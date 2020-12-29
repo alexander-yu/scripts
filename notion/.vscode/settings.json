@@ -1,0 +1,5 @@
+{
+    "python.testing.promptToConfigure": false,
+    "python.testing.autoTestDiscoverOnSaveEnabled": false,
+    "python.testing.pytestEnabled": false
+}
