@@ -1,6 +1,7 @@
 import configparser
 import json
 import os
+import typing
 
 import click
 import keyring
@@ -11,7 +12,7 @@ DEFAULT_CACHE_PATH = '.cache'
 SYSTEM = 'ayu:scripts:notion'
 
 
-def get_token(email=None, cache_path=DEFAULT_CACHE_PATH):
+def get_token(email: typing.Optional[str] = None, cache_path: str = DEFAULT_CACHE_PATH) -> str:
     if os.path.exists(cache_path):
         with open(cache_path, 'r') as file:
             return json.loads(file.readlines()[0])['token_v2']
@@ -34,7 +35,7 @@ def get_token(email=None, cache_path=DEFAULT_CACHE_PATH):
     return cookies['token_v2']
 
 
-def _get_password(email):
+def _get_password(email: str) -> str:
     password = keyring.get_password(SYSTEM, email)
 
     if password:
@@ -49,5 +50,5 @@ def _get_password(email):
 
 @click.command()
 @click.password_option()
-def _get_password_from_command_line(password):
+def _get_password_from_command_line(password: str) -> str:
     return password
