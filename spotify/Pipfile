@@ -13,6 +13,7 @@ cachetools = "*"
 click = "*"
 marshmallow = "*"
 boltons = "*"
+keyring = "*"
 
 [requires]
 python_version = "3.8"

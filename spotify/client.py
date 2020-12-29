@@ -1,9 +1,8 @@
-import configparser
-import os
-
 import cachetools
 import spotipy
 import spotipy.oauth2
+
+import auth
 
 
 CACHE_PATH = '.cache'
@@ -16,10 +15,8 @@ SCOPES = ' '.join([
 
 @cachetools.cached(cachetools.Cache(1))
 def spotify_client() -> spotipy.Spotify:
-    config = configparser.ConfigParser()
-    config.read(os.path.join(os.path.dirname(__file__), 'secrets.ini'))
-    client_id = config['client']['id']
-    client_secret = config['client']['secret']
+    client_id = auth.get_client_id()
+    client_secret = auth.get_client_secret(client_id)
 
     auth_manager = spotipy.oauth2.SpotifyOAuth(
         client_id=client_id,
