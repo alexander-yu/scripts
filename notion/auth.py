@@ -1,4 +1,3 @@
-import configparser
 import json
 import os
 import typing
@@ -9,6 +8,7 @@ import requests
 
 
 DEFAULT_CACHE_PATH = '.cache'
+EMAIL_KEY = 'Notion Email'
 SYSTEM = 'ayu:scripts:notion'
 
 
@@ -18,9 +18,7 @@ def get_token(email: typing.Optional[str] = None, cache_path: str = DEFAULT_CACH
             return json.loads(file.readlines()[0])['token_v2']
 
     if not email:
-        config = configparser.ConfigParser()
-        config.read('secrets.ini')
-        email = config['client']['email']
+        email = _get_email()
 
     password = _get_password(email)
 
@@ -35,20 +33,23 @@ def get_token(email: typing.Optional[str] = None, cache_path: str = DEFAULT_CACH
     return cookies['token_v2']
 
 
+def _get_email() -> str:
+    email = keyring.get_password(SYSTEM, EMAIL_KEY)
+
+    if email:
+        return email
+
+    email = click.prompt('Please enter your Notion email')
+    keyring.set_password(SYSTEM, EMAIL_KEY, email)
+    return email
+
+
 def _get_password(email: str) -> str:
     password = keyring.get_password(SYSTEM, email)
 
     if password:
         return password
 
-    # pylint: disable=no-value-for-parameter
-    # pylint: disable=unexpected-keyword-arg
-    password = _get_password_from_command_line(standalone_mode=False)
+    password = click.prompt('Please enter your Notion password', hide_input=True, confirmation_prompt=True)
     keyring.set_password(SYSTEM, email, password)
-    return password
-
-
-@click.command()
-@click.password_option()
-def _get_password_from_command_line(password: str) -> str:
     return password
