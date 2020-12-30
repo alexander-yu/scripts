@@ -1,7 +1,9 @@
 import collections
 import itertools
+import json
+import os
 
-from typing import Dict, Iterable
+from typing import Dict, Iterable, List, Tuple
 
 import click
 
@@ -10,38 +12,41 @@ import helpers
 import objects
 import schemas
 
+CACHE_PATH = '.save_albums_cache'
 PAGE_LIMIT = 50
 AUTOSAVE_THRESHOLD = 0.6
 
 
-def get_unsaved_albums(albums_by_id: Dict[str, objects.Album]) -> Iterable[objects.Album]:
+def get_unsaved_albums(albums_by_id: Dict[str, objects.Album]) -> Tuple[Iterable[objects.Album], Dict[str, int]]:
     spotify = client.spotify_client()
-    saved = spotify.current_user_saved_albums_contains(list(albums_by_id.keys()))
+    album_ids = list(albums_by_id.keys())
+    saved = spotify.current_user_saved_albums_contains(album_ids)
 
     unsaved_albums = {}
-    for album_id, album_is_saved in zip(albums_by_id.keys(), saved):
+    for album_id, album_is_saved in zip(album_ids, saved):
         if not album_is_saved:
             unsaved_albums[album_id] = albums_by_id[album_id]
 
-    autosaved_albums = autosave_albums(unsaved_albums)
+    album_save_counts = get_album_save_counts(list(unsaved_albums.values()))
+    autosaved_albums = autosave_albums(unsaved_albums, album_save_counts)
+
     for album_id in autosaved_albums:
         unsaved_albums.pop(album_id)
 
-    return unsaved_albums.values()
+    return unsaved_albums.values(), album_save_counts
 
 
-def autosave_albums(unsaved_albums: Dict[str, objects.Album]):
-    spotify = client.spotify_client()
+def get_album_save_counts(albums: List[objects.Album]) -> Dict[str, int]:
     albums_by_track = {
         track.id: album
-        for album in unsaved_albums.values()
+        for album in albums
         for track in album.tracks
     }
     track_ids = [
         track.id
         for track in itertools.chain.from_iterable([
             album.tracks
-            for album in unsaved_albums.values()
+            for album in albums
         ])
     ]
     saved = helpers.current_user_saved_tracks_contains(track_ids)
@@ -52,6 +57,11 @@ def autosave_albums(unsaved_albums: Dict[str, objects.Album]):
         if track_is_saved:
             album_save_counts[album.id] += 1
 
+    return album_save_counts
+
+
+def autosave_albums(unsaved_albums: Dict[str, objects.Album], album_save_counts: Dict[str, int]) -> List[str]:
+    spotify = client.spotify_client()
     albums_to_save = [
         album_id
         for album_id in album_save_counts
@@ -80,14 +90,27 @@ def get_albums_by_id(page: dict) -> Dict[str, objects.Album]:
     return helpers.get_albums(album_ids)
 
 
+def get_cache() -> dict:
+    if os.path.exists(CACHE_PATH):
+        with open(CACHE_PATH, 'r') as file:
+            return json.load(file)
+
+    return {'skipped': []}
+
+
 def save_albums(page: dict):
     spotify = client.spotify_client()
     albums_by_id = get_albums_by_id(page)
-    unsaved_albums = get_unsaved_albums(albums_by_id)
+    unsaved_albums, album_save_counts = get_unsaved_albums(albums_by_id)
+
+    cache = get_cache()
+    skipped = set(cache['skipped'])
+
+    unsaved_albums = [album for album in unsaved_albums if album.id not in skipped]
 
     lines = []
     for i, album in enumerate(unsaved_albums):
-        lines.append('{:>2}. {}'.format(i + 1, album))
+        lines.append(f'{i + 1:>2}. {album} ({album_save_counts[album.id]}/{len(album.tracks)})')
 
     if unsaved_albums:
         click.echo_via_pager('\n'.join(lines))
@@ -104,11 +127,20 @@ def save_albums(page: dict):
                     show_default=False,
                 )
                 try:
-                    indices = [int(index.strip()) for index in indices.split(',')]
+                    if indices:
+                        indices = set(int(index.strip()) for index in indices.split(','))
+                    else:
+                        indices = set()
                 except ValueError:
                     click.echo('"{indices}" was not a valid list of indices.'.format(indices=indices))
                 finally:
                     break  # pylint: disable=lost-exception
+
+            skipped.update(album.id for index, album in enumerate(unsaved_albums) if index + 1 not in indices)
+            cache['skipped'] = list(skipped)
+
+            with open(CACHE_PATH, 'w') as file:
+                json.dump(cache, file)
 
             if indices:
                 album_ids = [unsaved_albums[index - 1].id for index in indices]
@@ -124,13 +156,10 @@ def run():
     total = page['total']
 
     with click.progressbar(length=total) as bar:
-        save_albums(page)
-        bar.update(len(page['items']))
-
         while page:
-            page = spotify.next(page)
             save_albums(page)
             bar.update(len(page['items']))
+            page = spotify.next(page)
 
 
 if __name__ == '__main__':
