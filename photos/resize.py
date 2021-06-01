@@ -31,7 +31,7 @@ def resize_image(image, args):
     old_width, old_height = image.size
 
     if args.output_dir:
-        new_image = f'{args.output_dir}/{os.path.basename(image.filename)}'
+        new_image = (pathlib.Path(args.output_dir) / os.path.basename(image.filename)).with_suffix('.JPG')
     else:
         new_image = re.sub('\\.JPG', '_resized.JPG', image.filename)
 
@@ -60,7 +60,7 @@ def parse_args():
 
     parser.add_argument('dir', type=str)
     parser.add_argument('aspect_ratio', type=str)
-    parser.add_argument('--filter_files', type=str, default='*.JPG')
+    parser.add_argument('--filter_files', type=str, default='*.PNG')
     parser.add_argument('--filter_width', type=int)
     parser.add_argument('--filter_height', type=int)
     parser.add_argument('--filter_portrait', dest='filter_portrait', action='store_true')
