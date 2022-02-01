@@ -1,5 +1,4 @@
 import argparse
-import fractions
 import glob
 import os
 import pathlib
@@ -9,33 +8,11 @@ import subprocess
 from PIL import Image
 
 
-class AspectRatio(object):
-    def __init__(self, aspect_ratio):
-        parts = aspect_ratio.split(':')
-        if len(parts) != 2:
-            raise Exception(f'{aspect_ratio} is not a valid aspect ratio -- expected format: width:height')
-
-        width, height = parts
-        self.aspect_ratio = fractions.Fraction(int(width), int(height))
-
-    def get_new_dimensions(self, width, height):
-        original_aspect_ratio = fractions.Fraction(width, height)
-        if original_aspect_ratio >= self.aspect_ratio:
-            return width, int(width * 1 / self.aspect_ratio)
-        else:
-            return int(height * self.aspect_ratio), height
-
-
 def resize_image(image, args):
-    aspect_ratio = AspectRatio(args.aspect_ratio)
-    old_width, old_height = image.size
-
     if args.output_dir:
         new_image = (pathlib.Path(args.output_dir) / os.path.basename(image.filename)).with_suffix('.JPG')
     else:
         new_image = re.sub('\\.JPG', '_resized.JPG', image.filename)
-
-    new_width, new_height = aspect_ratio.get_new_dimensions(old_width, old_height)
 
     subprocess.run([
         'ffmpeg',
