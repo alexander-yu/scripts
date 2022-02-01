@@ -36,9 +36,6 @@ def resize_image(image, args):
         new_image = re.sub('\\.JPG', '_resized.JPG', image.filename)
 
     new_width, new_height = aspect_ratio.get_new_dimensions(old_width, old_height)
-    scale = min(new_width / old_width, new_height / old_height)
-    width_padding = f'({new_width}-{old_width})/2'
-    height_padding = f'({new_height}-{old_height})/2'
 
     subprocess.run([
         'ffmpeg',
@@ -47,8 +44,7 @@ def resize_image(image, args):
         '-q:v',
         '1',
         '-vf',
-        f'scale=iw*{scale}:ih*{scale},'
-        f'pad={new_width}:{new_height}:{width_padding}:{height_padding}:color={args.color},'
+        f'pad=1.05 * max(iw\,ih):ow:(ow-iw)/2:(oh-ih)/2:color={args.color},'
         'format=rgb24',
         new_image
     ])
