@@ -14,6 +14,8 @@ def resize_image(image, args):
     else:
         new_image = re.sub('\\.JPG', '_resized.JPG', image.filename)
 
+    aspect_ratio = 'iw+0.07*max(iw\,ih):ih+0.07*max(iw\,ih)' if args.preserve_aspect_ratio else '1.05*max(iw\,ih):ow'
+
     subprocess.run([
         'ffmpeg',
         '-i',
@@ -21,7 +23,7 @@ def resize_image(image, args):
         '-q:v',
         '1',
         '-vf',
-        f'pad=1.05 * max(iw\,ih):ow:(ow-iw)/2:(oh-ih)/2:color={args.color},'
+        f'pad={aspect_ratio}:(ow-iw)/2:(oh-ih)/2:color={args.color},'
         'format=rgb24',
         new_image
     ])
@@ -32,7 +34,7 @@ def parse_args():
     home = pathlib.Path.home()
 
     parser.add_argument('dir', type=str)
-    parser.add_argument('aspect_ratio', type=str)
+    parser.add_argument('--preserve_aspect_ratio', dest='preserve_aspect_ratio', action='store_true')
     parser.add_argument('--filter_files', type=str, default='*.PNG')
     parser.add_argument('--filter_width', type=int)
     parser.add_argument('--filter_height', type=int)
