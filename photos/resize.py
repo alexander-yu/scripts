@@ -31,7 +31,7 @@ def resize_image(image, args):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    home = pathlib.Path.home()
+    media_drive = pathlib.Path("D:/")
 
     parser.add_argument('dir', type=str)
     parser.add_argument('--preserve_aspect_ratio', dest='preserve_aspect_ratio', action='store_true')
@@ -41,7 +41,7 @@ def parse_args():
     parser.add_argument('--filter_portrait', dest='filter_portrait', action='store_true')
     parser.add_argument('--filter_landscape', dest='filter_landscape', action='store_true')
     parser.add_argument('--color', type=str, choices=['white', 'black'], default='white')
-    parser.add_argument('--output_dir', type=str, default=str(home / 'Google Drive' / 'Photos' / 'Output'))
+    parser.add_argument('--output_dir', type=str, default=str(media_drive / 'Google Drive' / 'Photos' / 'Output'))
 
     return parser.parse_args()
 
