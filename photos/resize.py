@@ -17,9 +17,9 @@ def resize_image(image, args):
         new_image = re.sub("\\.JPG", "_resized.JPG", image.filename)
 
     aspect_ratio = (
-        "iw+0.07*max(iw,ih):ih+0.07*max(iw,ih)"
+        "iw+0.07*max(iw\\,ih):ih+0.07*max(iw\\,ih)"
         if args.preserve_aspect_ratio
-        else "1.05*max(iw,ih):ow"
+        else "1.05*max(iw\\,ih):ow"
     )
 
     subprocess.run(
