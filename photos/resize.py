@@ -78,7 +78,9 @@ def get_images(args):
             or (args.filter_portrait and image.width >= image.height)
             or (args.filter_landscape and image.width <= image.height)
         ):
-            yield image
+            continue
+
+        yield image
 
 
 def run():
